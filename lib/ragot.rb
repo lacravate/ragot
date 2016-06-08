@@ -6,7 +6,13 @@ module Ragot
 
   def about(*_, &block)
     d = Declaration.new _.shift
-    d.ragot *_, &block
+
+    if _.any?
+      d.ragot *_, &block
+    else
+      d.instance_exec &block
+    end
+
     d.make_ragots
   end
 
