@@ -70,6 +70,10 @@ module Ragot
       @klass = klass
     end
 
+    def klass
+      @klass || self.class
+    end
+
   end
 
 end
