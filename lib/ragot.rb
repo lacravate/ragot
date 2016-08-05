@@ -35,7 +35,8 @@ module Ragot
     }
 
     def ragot(method, options={}, &block)
-      __make_ragot method, block || __make_talk(method), { failsafe: FAILSAFE[Ragot.env] }.merge(options)
+      block ||= ->(result, *_) { instance_exec method, result, *_, &TALK }
+      __make_ragot method, block, { failsafe: FAILSAFE[Ragot.env] }.merge(options)
     end
 
     private
@@ -54,10 +55,6 @@ module Ragot
 
         r
       end
-    end
-
-    def __make_talk(method)
-      ->(result, *_) { instance_exec method, result, *_, &TALK }
     end
 
   end
