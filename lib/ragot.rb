@@ -4,14 +4,13 @@ module Ragot
     klass.extend Spread
   end
 
-  def about(*_, &block)
-    d = Declaration.new _.shift
+  def env
+    @env ||= 'development'
+  end
 
-    if _.any?
-      d.ragot *_, &block
-    else
-      d.instance_exec &block
-    end
+  def env=(env)
+    @env = env.to_s
+  end
 
     d.make_ragots
   end
