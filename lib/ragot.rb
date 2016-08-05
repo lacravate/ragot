@@ -23,30 +23,35 @@ module Ragot
 
   module Spread
 
-    def ragot(method, options={}, &block)
-      block ||= ->(result, *_) do
-        log "#{method} called, with params : #{_}"
-        log result
+    FAILSAFE = { 'demo' => true, 'production' => true }
+    TALK = ->(method, result, *_) { tell "`#{method}` called, with params : '#{_}'. Got '#{result}' as result" }
+    STAMP = ->(method) { tell "entered #{method} at #{Time.now.to_f}" }
+    EXECUTE_HOOKS = ->(failsafe, code, *params) {
+      begin
+        instance_exec *params, &code
+      rescue => e
+        failsafe ? nil : raise(e)
       end
+    }
 
       (@ragots ||= []) << [method, block, options]
     end
 
-    def make_ragots(klass=@klass)
-      @ragots.each do |rag|
-        method, talk, options = rag
+    private
 
-        klass = klass.singleton_class if options[:class]
-        stamp = -> { log "entered #{method} at #{Time.now.to_f}" } if options[:stamp]
+    alias_method :tell, :puts
 
-        klass.send :alias_method, "__loggable_#{method}", method
-        klass.send :define_method, method, ->(*_, &b) do
-          instance_exec &stamp if stamp rescue nil
-          r = send "__loggable_#{method}", *_, &b
-          instance_exec r, &talk rescue nil
+    def __make_ragot(method, talk, options)
+      return unless Array(options[:env]).empty? || Array(options[:env]).map(&:to_s).include?(Ragot.env)
 
-          r
-        end
+      k = options[:class] ? klass.singleton_class : klass
+      k.send :alias_method, "__ragot_inception_#{method}", method
+      k.send :define_method, method, ->(*_, &b) do
+        instance_exec options[:failsafe], STAMP, method, &EXECUTE_HOOKS if options[:stamp]
+        r = send "__ragot_inception_#{method}", *_, &b
+        instance_exec options[:failsafe], talk, r, *_, &EXECUTE_HOOKS
+
+        r
       end
     end
 
