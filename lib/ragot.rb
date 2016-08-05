@@ -41,14 +41,14 @@ module Ragot
 
     private
 
-    alias_method :tell, :puts
-
     def __make_ragot(method, talk, options)
       return unless Array(options[:env]).empty? || Array(options[:env]).map(&:to_s).include?(Ragot.env)
 
       k = options[:class] ? klass.singleton_class : klass
       k.send :alias_method, "__ragot_inception_#{method}", method
       k.send :define_method, method, ->(*_, &b) do
+        @need_tell ||= respond_to?(:tell, true) || !!self.class.send(:alias_method, :tell, :puts)
+
         instance_exec options[:failsafe], STAMP, method, &EXECUTE_HOOKS if options[:stamp]
         r = send "__ragot_inception_#{method}", *_, &b
         instance_exec options[:failsafe], talk, r, *_, &EXECUTE_HOOKS
