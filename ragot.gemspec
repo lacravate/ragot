@@ -15,4 +15,7 @@ Gem::Specification.new do |s|
   s.files         = `git ls-files app lib`.split("\n")
   s.platform      = Gem::Platform::RUBY
   s.require_paths = ['lib']
+
+  s.add_development_dependency 'pry'
+  s.add_development_dependency 'rspec'
 end
