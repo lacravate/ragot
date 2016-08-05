@@ -12,9 +12,13 @@ module Ragot
     @env = env.to_s
   end
 
-    d.make_ragots
+  def about(*_, &block)
+    declaration = Declaration.new _.shift
+    _.any? ? declaration.ragot(*_, &block) : declaration.instance_exec(&block)
   end
 
+  module_function :env
+  module_function :env=
   module_function :about
 
   module Spread
