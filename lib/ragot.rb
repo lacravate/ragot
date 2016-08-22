@@ -13,13 +13,10 @@ module Ragot
   end
 
   def about(*_, &block)
-    declaration = Declaration.new _.shift
-    _.any? ? declaration.ragot(*_, &block) : declaration.instance_exec(&block)
+    Declaration.for(_.shift).send _.empty? ? :instance_exec : :ragot, *_, &block
   end
 
-  module_function :env
-  module_function :env=
-  module_function :about
+  module_function :about, :env, :env=
 
   module RagotInside
 
