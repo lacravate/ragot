@@ -1,5 +1,6 @@
 $:.unshift File.join(Dir.pwd, File.dirname(__FILE__))
 
+require 'pry'
 require 'ragot'
 
 Ragot.env = 'test'
