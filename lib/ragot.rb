@@ -24,9 +24,18 @@ module Ragot
   module Spread
 
     FAILSAFE = { 'demo' => true, 'production' => true }
-    TALK = ->(method, result, *_) { tell "`#{method}` called, with params : '#{_}'. Got '#{result}' as result" }
-    STAMP = ->(method) { tell "entered #{method} at #{Time.now.to_f}" }
-    EXECUTE_HOOKS = ->(failsafe, code, *params) {
+    MESSAGE = {
+      before: "Entered %s, with params '%s', at %s .%s",
+      after: "`%s` called, with params : '%s'. Got '%s' as result, at %s .%s"
+    }
+
+    HOOK = ->(hook, meth, result, *_) {
+      time = [Time.now].tap { |t| t << t.first.to_f.to_s.split('.').last }
+      msg = MESSAGE[hook] % [meth, _.to_s, result, *time].compact
+      respond_to?(:tell) ? tell(msg) : puts(msg)
+    }
+
+    EXEC_HOOK = ->(failsafe, code, *params) {
       begin
         instance_exec *params, &code
       rescue => e
@@ -39,36 +48,41 @@ module Ragot
       __make_ragot method, block, { failsafe: FAILSAFE[Ragot.env] }.merge(options)
     end
 
-    private
-
-    def __make_ragot(method, talk, options)
-      return unless Array(options[:env]).empty? || Array(options[:env]).map(&:to_s).include?(Ragot.env)
-
-      k = options[:class] ? klass.singleton_class : klass
-      k.send :alias_method, "__ragot_inception_#{method}", method
-      k.send :define_method, method, ->(*_, &b) do
-        @need_tell ||= respond_to?(:tell, true) || !!self.class.send(:alias_method, :tell, :puts)
-
-        instance_exec options[:failsafe], STAMP, method, &EXECUTE_HOOKS if options[:stamp]
-        r = send "__ragot_inception_#{method}", *_, &b
-        instance_exec options[:failsafe], talk, r, *_, &EXECUTE_HOOKS
+    def initialize(klass)
+      @klass = klass
+    end
 
         r
       end
     end
 
-  end
+    def ragot(meth, options={}, &block)
+      options = { hook: :after, failsafe: FAILSAFE[Ragot.env] }.merge(options)
+      block ||= ->(result, *_) { instance_exec options[:hook], meth, result, *_, &HOOK }
 
-  class Declaration
-
-    include Spread
-
-    def initialize(klass=nil)
-      @klass = klass
+      __incept_ragot meth, block, options
+    rescue => e
+      ((@ragots ||= {})[meth.to_sym] ||= []) << [ meth, block, options ]
     end
 
-    def klass
-      @klass || self.class
+    private
+
+    def __incept_ragot(meth, blk, options)
+      return unless Array(options[:env]).empty? ||
+        Array(options[:env]).map(&:to_s).include?(Ragot.env)
+
+      f = options[:failsafe]
+      aka = "__ragot_inception_#{meth}_#{Time.now.to_f.to_s.sub('.', '_')}"
+      k = options[:class] ? @klass.singleton_class : @klass
+      k.send :alias_method, aka, meth
+      k.send :define_method, meth, ->(*_, &b) {
+        instance_exec f, HOOK, :before, meth, nil, *_, &EXEC_HOOK if options[:stamp]
+        instance_exec f, blk, meth, *_, &EXEC_HOOK if options[:hook] == :before
+        r = send aka, *_, &b
+        instance_exec f, blk, r, *_, &EXEC_HOOK if options[:hook] == :after
+
+        r
+      }
     end
 
   end
