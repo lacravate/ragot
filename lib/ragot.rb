@@ -74,16 +74,17 @@ module Ragot
       end
     }
 
-    def ragot(method, options={}, &block)
-      block ||= ->(result, *_) { instance_exec method, result, *_, &TALK }
-      __make_ragot method, block, { failsafe: FAILSAFE[Ragot.env] }.merge(options)
+    def self.for(klass)
+      (@collection ||= {})[klass] ||= new klass
     end
 
     def initialize(klass)
       @klass = klass
     end
 
-        r
+    def trigger(meth)
+      Array(@ragots && @ragots[meth.to_sym]).each do |r|
+        __incept_ragot *@ragots[meth.to_sym].delete(r)
       end
     end
 
