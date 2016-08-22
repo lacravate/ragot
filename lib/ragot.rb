@@ -1,7 +1,7 @@
 module Ragot
 
   def self.included(klass)
-    klass.extend Spread
+    klass.extend RagotInside
   end
 
   def env
@@ -21,7 +21,38 @@ module Ragot
   module_function :env=
   module_function :about
 
-  module Spread
+  module RagotInside
+
+    def self.extended(klass)
+      unless klass.respond_to?(:after, true) || klass.respond_to?(:before, true)
+        klass.singleton_class.send :alias_method, :before, :declare_ragot
+        klass.singleton_class.send :alias_method, :after, :declare_ragot
+      end
+    end
+
+    def singleton_method_added(meth)
+      if method(meth).owner != Ragot::RagotInside && %i|before after|.include?(meth)
+        singleton_class.send :remove_method, (%i|before after| - [meth]).first
+      end
+    end
+
+    def method_added(meth)
+      Declaration.for(self).trigger meth
+    end
+
+    def declare_ragot(meth,  options={}, &block)
+      hook = __callee__.to_s.split('_').last.to_sym
+      Declaration.for(self).ragot meth, options.merge(hook: hook), &block
+    end
+
+    alias_method :ragot_after, :declare_ragot
+    alias_method :ragot_before, :declare_ragot
+
+    private :declare_ragot
+
+  end
+
+  class Declaration
 
     FAILSAFE = { 'demo' => true, 'production' => true }
     MESSAGE = {
