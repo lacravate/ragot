@@ -86,9 +86,6 @@ module Ragot
     end
 
     def ragot(meth, options={}, &block)
-      options = { hook: :after, failsafe: FAILSAFE[Ragot.env] }.merge(options)
-      block ||= ->(result, *_) { instance_exec options[:hook], meth, result, *_, &HOOK }
-
       __incept_ragot meth, block, options
     rescue => e
       ((@ragots ||= {})[meth.to_sym] ||= []) << [ meth, block, options ]
@@ -97,10 +94,11 @@ module Ragot
     private
 
     def __incept_ragot(meth, blk, options)
-      return unless Array(options[:env]).empty? ||
-        Array(options[:env]).map(&:to_s).include?(Ragot.env)
+      o = { hook: :after, failsafe: FAILSAFE[Ragot.env], env: Ragot.env }.merge(options)
 
-      f = options[:failsafe]
+      return unless Array(o[:env]).map(&:to_s).include? Ragot.env
+
+      k = o[:class] ? @klass.singleton_class : @klass
       aka = "__ragot_inception_#{meth}_#{Time.now.to_f.to_s.sub('.', '_')}"
       k = options[:class] ? @klass.singleton_class : @klass
       k.send :alias_method, aka, meth
