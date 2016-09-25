@@ -1,19 +1,27 @@
 require 'json'
 
-class RagotString < String
-
-  module Tell
-    def tell(*_)
-      (@log ||= []) << _
-    end
-
-    def log
-      @log
-    end
+module Talk
+  def ragot_talk(*_)
+    (@log ||= []) << _
   end
 
-  extend Tell
-  include Tell
+  def log
+    @log
+  end
+end
+
+
+class RagotString < String
+
+  include Talk
+
+  private :ragot_talk
+
+end
+
+class RagotStringClass < String
+
+  extend Talk
 
 end
 
@@ -24,13 +32,17 @@ class RagotClone < RagotString
   after :plap
   before :plap
 
+  before :sub! do |*params|
+    ragot_talk "about to replace '#{params.first}' with '#{params.last}' in '#{self}'"
+  end
+
   def plap
     'plop'
   end
 
 end
 
-class Stash < Array
+class Stash
 
   class << self
 
@@ -56,11 +68,11 @@ class Couroucoucou
 
 end
 
+Ragot.about RagotStringClass, :name, class: true
+
 Ragot.about RagotString, :to_sym
 
 Ragot.about RagotString do
-  ragot :name, class: true
-
   ragot :<<
 
   ragot :to_s, stamp: true
@@ -68,7 +80,7 @@ Ragot.about RagotString do
   ragot :to_i, env: [:production, :test]
 
   ragot :to_f do |result, *params|
-    tell "`to_f` called, with params : '#{params.to_s}'. Got a whopping '#{result}' as result"
+    ragot_talk "`to_f` called, with params : '#{params.to_s}'. Got a whopping '#{result}' as result"
   end
 
   ragot :to_r, failsafe: true do
@@ -81,10 +93,25 @@ Ragot.about RagotString do
 end
 
 describe RagotClone do
+  describe "before" do
+    let(:string) { described_class.new 'plop' }
+
+    describe 'sub!' do
+      before {
+        string.sub! 'p', 'c'
+      }
+
+      it "should have logged the call to sub! method before it occurred" do
+        expect(string.log).to eq [ ["about to replace 'p' with 'c' in 'plop'"] ]
+        expect(string).to eq 'clop'
+      end
+    end
+  end
+
   describe 'about' do
     let(:string) { described_class.new 'plop' }
 
-    describe 'plop' do
+    describe 'plap' do
       before {
         string.plap
       }
@@ -184,14 +211,18 @@ describe RagotString do
         expect(string.log).to eq [["`<<` called, with params : '[\"inou\"]'. Got 'plopinou' as result, at #{string.log.first.first.scan(/at (.+)$/).first.first}"]]
       end
     end
+  end
+end
 
+describe RagotStringClass do
+  describe "about" do
     describe 'name' do
       before {
-        RagotString.name
+        described_class.name
       }
 
       it "should have logged the access to name class method" do
-        expect(RagotString.log).to eq [["`name` called, with params : '[]'. Got 'RagotString' as result, at #{RagotString.log.first.first.scan(/at (.+)$/).first.first}"]]
+        expect(RagotStringClass.log).to eq [["`name` called, with params : '[]'. Got 'RagotStringClass' as result, at #{described_class.log.first.first.scan(/at (.+)$/).first.first}"]]
       end
     end
   end
