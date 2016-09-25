@@ -96,7 +96,10 @@ module Ragot
 
       k = o[:class] ? @klass.singleton_class : @klass
       aka = "__ragot_inception_#{meth}_#{Time.now.to_f.to_s.sub('.', '_')}"
-      k = options[:class] ? @klass.singleton_class : @klass
+      blk ||= ->(*_) { instance_exec o[:hook], meth, _.shift, *_, &DEFAULT_HOOK }
+      stamp = ->(*_) { instance_exec :before, meth, _.shift, *_, &DEFAULT_HOOK } if o[:stamp]
+
+      k.send :alias_method, :ragot_talk, :puts unless (k.instance_methods + k.private_instance_methods).include? :ragot_talk
       k.send :alias_method, aka, meth
       k.send :define_method, meth, ->(*_, &b) {
         instance_exec f, HOOK, :before, meth, nil, *_, &EXEC_HOOK if options[:stamp]
