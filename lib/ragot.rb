@@ -102,13 +102,14 @@ module Ragot
       k.send :alias_method, :ragot_talk, :puts unless (k.instance_methods + k.private_instance_methods).include? :ragot_talk
       k.send :alias_method, aka, meth
       k.send :define_method, meth, ->(*_, &b) {
-        instance_exec f, HOOK, :before, meth, nil, *_, &EXEC_HOOK if options[:stamp]
-        instance_exec f, blk, meth, *_, &EXEC_HOOK if options[:hook] == :before
+        Declaration.exec_hook self, o[:failsafe], stamp, *_ if stamp
+        Declaration.exec_hook self, o[:failsafe], blk, *_ if o[:hook] == :before
         r = send aka, *_, &b
-        instance_exec f, blk, r, *_, &EXEC_HOOK if options[:hook] == :after
+        Declaration.exec_hook self, o[:failsafe], blk,   r  , *_ if o[:hook] == :after
 
         r
       }
+
     end
 
   end
