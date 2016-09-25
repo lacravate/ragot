@@ -12,8 +12,8 @@ module Ragot
     @env = env.to_s
   end
 
-  def about(*_, &block)
-    Declaration.for(_.shift).send _.empty? ? :instance_exec : :ragot, *_, &block
+  def about(klass, *_, &block)
+    Declaration.for(klass).send (_.empty? ? :instance_exec : :ragot), *_, &block
   end
 
   module_function :about, :env, :env=
