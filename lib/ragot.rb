@@ -44,32 +44,11 @@ module Ragot
 
     alias_method :ragot_after, :declare_ragot
     alias_method :ragot_before, :declare_ragot
-
     private :declare_ragot
 
   end
 
   class Declaration
-
-    FAILSAFE = { 'demo' => true, 'production' => true }
-    MESSAGE = {
-      before: "Entered %s, with params '%s', at %s .%s",
-      after: "`%s` called, with params : '%s'. Got '%s' as result, at %s .%s"
-    }
-
-    HOOK = ->(hook, meth, result, *_) {
-      time = [Time.now].tap { |t| t << t.first.to_f.to_s.split('.').last }
-      msg = MESSAGE[hook] % [meth, _.to_s, result, *time].compact
-      respond_to?(:tell) ? tell(msg) : puts(msg)
-    }
-
-    EXEC_HOOK = ->(failsafe, code, *params) {
-      begin
-        instance_exec *params, &code
-      rescue => e
-        failsafe ? nil : raise(e)
-      end
-    }
 
     def self.for(klass)
       (@collection ||= {})[klass] ||= new klass
@@ -92,6 +71,23 @@ module Ragot
     end
 
     private
+
+    FAILSAFE = { 'demo' => true, 'production' => true }
+    MESSAGE = {
+      before: "Entered %s, with params '%s',%s at %s .%s",
+      after: "`%s` called, with params : '%s'. Got '%s' as result, at %s .%s"
+    }
+
+    DEFAULT_HOOK = ->(hook, meth, result, *_) {
+      time = [Time.now].tap { |t| t << t.first.to_f.to_s.split('.').last }
+      ragot_talk MESSAGE[hook] % [meth, _.to_s, result, *time]
+    }
+
+    def self.exec_hook(ragoted, failsafe, code, *result_and_params)
+      ragoted.instance_exec *result_and_params, &code
+    rescue => e
+      failsafe ? nil : raise(e)
+    end
 
     def __incept_ragot(meth, blk, options)
       o = { hook: :after, failsafe: FAILSAFE[Ragot.env], env: Ragot.env }.merge(options)
