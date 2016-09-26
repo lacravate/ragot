@@ -228,7 +228,7 @@ describe RagotStringClass do
   end
 end
 
-Ragot.about JSON, :dump, class: true, stamp: true do |result, *_|
+Ragot.about JSON, :dump, class: true do |result, *_|
   Stash << "JSON produced #{result} with #{_}"
 end
 
