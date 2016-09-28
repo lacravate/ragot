@@ -68,6 +68,10 @@ class Couroucoucou
 
 end
 
+Ragot.about RagotClone, :plap do |result|
+  ragot_talk "'#{result}' is so fun to get, i cant't help calling `plap` again and again!"
+end
+
 Ragot.about RagotStringClass, :name, class: true
 
 Ragot.about RagotString, :to_sym
@@ -80,7 +84,7 @@ Ragot.about RagotString do
   ragot :to_i, env: [:production, :test]
 
   ragot :to_f do |result, *params|
-    ragot_talk "`to_f` called, with params : '#{params.to_s}'. Got a whopping '#{result}' as result"
+    ragot_talk "`to_f` called, with params : #{params.to_s}. Got a whopping '#{result}' as result"
   end
 
   ragot :to_r, failsafe: true do
@@ -118,8 +122,9 @@ describe RagotClone do
 
       it "should have logged the call to plop method" do
         expect(string.log).to eq [
-          ["Entered plap, with params '[]', at #{string.log.first.first.scan(/at (.+)$/).first.first}"],
-          ["`plap` called, with params : '[]'. Got 'plop' as result, at #{string.log.last.first.scan(/at (.+)$/).first.first}"],
+          ["Entered plap, with params [], at #{string.log.first.first.scan(/at (.+)$/).first.first}"],
+          ["`plap` called, with params : []. Got 'plop' as result, at #{string.log[1].first.scan(/at (.+)$/).first.first}"],
+          ["'plop' is so fun to get, i cant't help calling `plap` again and again!"]
         ]
       end
     end
@@ -136,7 +141,7 @@ describe RagotString do
       }
 
       it "should have logged the call to to_sym method" do
-        expect(string.log).to eq [ ["`to_sym` called, with params : '[]'. Got 'plop' as result, at #{string.log.first.first.scan(/at (.+)$/).first.first}"] ]
+        expect(string.log).to eq [ ["`to_sym` called, with params : []. Got 'plop' as result, at #{string.log.first.first.scan(/at (.+)$/).first.first}"] ]
       end
     end
 
@@ -147,8 +152,8 @@ describe RagotString do
 
       it "should have logged the access and the call to to_s method" do
         expect(string.log).to eq [
-          ["Entered to_s, with params '[]', at #{string.log.first.first.scan(/at (.+)$/).first.first}"],
-          ["`to_s` called, with params : '[]'. Got 'plop' as result, at #{string.log.last.first.scan(/at (.+)$/).first.first}"]
+          ["Entered to_s, with params [], at #{string.log.first.first.scan(/at (.+)$/).first.first}"],
+          ["`to_s` called, with params : []. Got 'plop' as result, at #{string.log.last.first.scan(/at (.+)$/).first.first}"]
         ]
       end
     end
@@ -160,7 +165,7 @@ describe RagotString do
 
       it "should have logged a message different from the default one" do
         expect(string.log).to eq [
-          ["`to_f` called, with params : '[]'. Got a whopping '0.0' as result"]
+          ["`to_f` called, with params : []. Got a whopping '0.0' as result"]
         ]
       end
     end
@@ -198,7 +203,7 @@ describe RagotString do
       }
 
       it "should have logged the access and the call to to_i method in production env" do
-        expect(string.log).to eq [["`to_i` called, with params : '[]'. Got '0' as result, at #{string.log.first.first.scan(/at (.+)$/).first.first}"]]
+        expect(string.log).to eq [["`to_i` called, with params : []. Got '0' as result, at #{string.log.first.first.scan(/at (.+)$/).first.first}"]]
       end
     end
 
@@ -208,7 +213,7 @@ describe RagotString do
       }
 
       it "should have logged the access to << method" do
-        expect(string.log).to eq [["`<<` called, with params : '[\"inou\"]'. Got 'plopinou' as result, at #{string.log.first.first.scan(/at (.+)$/).first.first}"]]
+        expect(string.log).to eq [["`<<` called, with params : [\"inou\"]. Got 'plopinou' as result, at #{string.log.first.first.scan(/at (.+)$/).first.first}"]]
       end
     end
   end
@@ -222,7 +227,7 @@ describe RagotStringClass do
       }
 
       it "should have logged the access to name class method" do
-        expect(RagotStringClass.log).to eq [["`name` called, with params : '[]'. Got 'RagotStringClass' as result, at #{described_class.log.first.first.scan(/at (.+)$/).first.first}"]]
+        expect(RagotStringClass.log).to eq [["`name` called, with params : []. Got 'RagotStringClass' as result, at #{described_class.log.first.first.scan(/at (.+)$/).first.first}"]]
       end
     end
   end
