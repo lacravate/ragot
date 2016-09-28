@@ -96,6 +96,12 @@ module Ragot
       @i[k][meth][:alias] ||= redefine k, meth, @i[k][meth]
     end
 
+    def redefine(klass, meth, i)
+      klass.send :alias_method, "__ragot_inception_#{meth}", meth
+      klass.send :define_method, meth, ->(*_, &b) {
+        (i[:stamp] + i[:before]).each { |exe| Declaration.exec_hook self, *exe, *_ }
+        r = send "__ragot_inception_#{meth}", *_, &b
+        i[:after].each { |exe| Declaration.exec_hook self, *exe, r, *_ }
         r
       }
 
