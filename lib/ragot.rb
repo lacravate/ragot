@@ -55,7 +55,7 @@ module Ragot
     end
 
     def initialize(klass)
-      @klass = klass
+      @klass, @ragots, @i = klass, {}, { klass => {}, klass.singleton_class => {} }
     end
 
     def trigger(meth)
