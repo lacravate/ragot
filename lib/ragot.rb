@@ -59,8 +59,8 @@ module Ragot
     end
 
     def trigger(meth)
-      Array(@ragots && @ragots[meth.to_sym]).each do |r|
-        __incept_ragot *@ragots[meth.to_sym].delete(r)
+      @ragots[meth] && @ragots[meth].shift(@ragots[meth].size).each do |r|
+        __incept_ragot *r
       end
     end
 
