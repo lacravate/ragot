@@ -10,44 +10,39 @@ code, or with the use of Ragot inherited class methods `before` and `after`.
 
 Ruby 2.* (i guess).
 
-Install it with rubygems:
+Install it with rubygems: `gem install ragot`
 
-    gem install ragot
-
-With bundler, add it to your `Gemfile`:
-
-```ruby
-gem "ragot"
-
-```
+With bundler, add it to your `Gemfile`: `gem ragot`
 
 ## Use
 
 ### `Ragot.about` (unobstrusive)
 
 ```ruby
-irb(main):001:0> require 'ragot'
-irb(main):001:0> Ragot.about String, :upcase # only to show it's easy, not to tell you it's a good idea...
-irb(main):002:0> "example".upcase
-`upcase` called, with params : '[]'. Got 'EXAMPLE' as result, at 2016-09-25 20:47:14 +0200 .0821934
+require 'ragot'
+Ragot.about String, :upcase        # only to show it's easy, not to tell you it's a good idea...
+"example".upcase
+# puts `upcase` called, with params : []. Got 'EXAMPLE' as result, at 2016-09-25 20:47:14 +0200 .0821934
 => "EXAMPLE"
 ```
 
-`Ragot.about`can be declared anywhere in all your code base, given the targeted
-class is already defined. Handy to trace a call to a gem class and method without
-ripping open the library.
+`Ragot.about` can be declared anywhere given the targeted class (or module) is
+already defined.
 
 Targeted methods don't even need to be defined. If not already, they'll be
 hooked when added to the targeted class or module.
 
+Hooks can be piled up on methods and will be executed in the order they were
+declared.
+
 #### Options
 
-Let's say you have `Person` class in an `App` with a `log` method.
+Let's say you have `Person` class in an `App`, itself with a `log` method.
 
 * block
 
 It is executed in instance context. The return value of the targeted method,
-and the arguments passed to it, are yielded to the block.
+as welle as the arguments passed to it, are yielded to the block.
 
 ```ruby
 Ragot.about Person, :save do |save_return_value, *params|
@@ -76,7 +71,7 @@ You want to hook a class, instead of instance, method.
 
 ```ruby
 Ragot.about Person, :name, class: true do |name, *empty_params|
-  App.log "#{self} class is asked its name again !"
+  App.log "#{self} class is asked its name again !" # self is singleton_class
 end
 ```
 
@@ -100,7 +95,7 @@ will be compared to `Ragot.env` value, which can be set as such :
 ```ruby
 Ragot.about Person, :save, env: ['staging', 'production'] do |save_return_value|
   if save_return_value
-    self.costy_stats_gathering! # that you don't want to do in 'development'
+    self.costly_stats_gathering! # that you don't want to do in 'development'
   end
 end
 ```
@@ -116,7 +111,7 @@ irb(main):002:0> Person.new.suspicious_behaviour_method
 Entered to_s, with params '[]', at <this time>
 Entered to_s, with params '[]', at <this other time>
 Entered to_s, with params '[]', at <this yet other time>
-=> "suspicious_behaviour_method_result"
+=> "suspicious_behaviour_method_result" # called three times then...
 ```
 
 ## `before` and `after`
@@ -126,6 +121,10 @@ Entered to_s, with params '[]', at <this yet other time>
 They have the same behaviour and options as `about` above (except the `hook`
 option).
 
+If `before` or `after` methods already exist in class or module, Ragot's won't
+overload them. You would still have access to `ragot_before` and `ragot_after`
+methods to which `before` or `after` are aliases anyway.
+
 ```ruby
 class PersonAssignment
   include Ragot
@@ -133,8 +132,32 @@ class PersonAssignment
   after :person= do |person, person|
     App.log "#{person.full_name} was given a new job as #{self.name}"
   end
-
 end
+```
+
+## Use cases
+
+* callbacks
+
+All the occuurrences when you need to do something that is not the job per se of
+your application, and you don't want to your class declaration to be clumbered
+by bits you consider heterogeneous.
+
+It can be logging, stats, external API push, ...
+
+* debug
+
+Also, when you don't understand the behaviour of a library, or experience a
+crash, you can get help from `Ragot` to take a closer look without ripping it
+open and garble its code with you traces.
+
+```ruby
+Ragot.about JSON, :dump, class: true, stamp: true
+=> :dump
+JSON.dump({a: 1})
+Entered dump, with params '[]',{:a=>1} at 2016-09-26 02:32:12 +0200 .553876
+`dump` called, with params : '[{:a=>1}]'. Got '{"a":1}' as result, at 2016-09-26 02:32:12 +0200 .5540571
+=> "{\"a\":1}"
 ```
 
 ## Thanks
