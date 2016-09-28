@@ -65,9 +65,8 @@ module Ragot
     end
 
     def ragot(meth, options={}, &block)
-      __incept_ragot meth, block, options
-    rescue => e
-      ((@ragots ||= {})[meth.to_sym] ||= []) << [ meth, block, options ]
+      __incept_ragot(meth.to_sym, block, options) ||
+        (@ragots[meth.to_sym] ||= []).push([meth.to_sym, block, options])
     end
 
     private
