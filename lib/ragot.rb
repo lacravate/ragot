@@ -85,21 +85,16 @@ module Ragot
 
     def __incept_ragot(meth, blk, options)
       o = { hook: :after, failsafe: FAILSAFE[Ragot.env], env: Ragot.env }.merge(options)
+      k = o[:class] ? @klass.singleton_class : @klass
+      @i[k][meth] ||= { before: [], after: [], stamp: [] }
 
       return unless Array(o[:env]).map(&:to_s).include? Ragot.env
+      return unless (k.instance_methods + k.private_instance_methods).include? meth.to_sym
 
-      k = o[:class] ? @klass.singleton_class : @klass
-      aka = "__ragot_inception_#{meth}_#{Time.now.to_f.to_s.sub('.', '_')}"
-      blk ||= ->(*_) { instance_exec o[:hook], meth, _.shift, *_, &DEFAULT_HOOK }
-      stamp = ->(*_) { instance_exec :before, meth, _.shift, *_, &DEFAULT_HOOK } if o[:stamp]
-
-      k.send :alias_method, :ragot_talk, :puts unless (k.instance_methods + k.private_instance_methods).include? :ragot_talk
-      k.send :alias_method, aka, meth
-      k.send :define_method, meth, ->(*_, &b) {
-        Declaration.exec_hook self, o[:failsafe], stamp, *_ if stamp
-        Declaration.exec_hook self, o[:failsafe], blk, *_ if o[:hook] == :before
-        r = send aka, *_, &b
-        Declaration.exec_hook self, o[:failsafe], blk,   r  , *_ if o[:hook] == :after
+      @i[k][meth][ :stamp ] << [ o[:failsafe], default_hook(meth, :before) ] if o[:stamp]
+      @i[k][meth][o[:hook]] << [ o[:failsafe], blk || default_hook(meth,  o[:hook]) ]
+      @i[k][meth][:alias] ||= redefine k, meth, @i[k][meth]
+    end
 
         r
       }
