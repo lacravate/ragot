@@ -77,13 +77,8 @@ module Ragot
       after: "`%s` called, with params : '%s'. Got '%s' as result, at %s .%s"
     }
 
-    DEFAULT_HOOK = ->(hook, meth, result, *_) {
-      time = [Time.now].tap { |t| t << t.first.to_f.to_s.split('.').last }
-      ragot_talk MESSAGE[hook] % [meth, _.to_s, result, *time]
-    }
-
-    def self.exec_hook(ragoted, failsafe, code, *result_and_params)
-      ragoted.instance_exec *result_and_params, &code
+    def self.exec_hook(ragotee, failsafe, code, *result_and_params)
+      ragotee.instance_exec *result_and_params, &code
     rescue => e
       failsafe ? nil : raise(e)
     end
