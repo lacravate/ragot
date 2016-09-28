@@ -1,17 +1,13 @@
 # Ragot
 
-A gem to tell on methods and what they do, behind their backs. A hack to create
-hooks around methods.
-
-Either unobstrusive, with no change whatsoever in the source of the targeted
-code, or with the use of Ragot inherited class methods `before` and `after`.
+A hack to create hooks around methods, either unobstrusive, with no change
+whatsoever in the source of the targeted code, or with the use of Ragot
+inherited class methods `before` and `after`.
 
 ## Installation
 
 Ruby 2.* (i guess).
-
 Install it with rubygems: `gem install ragot`
-
 With bundler, add it to your `Gemfile`: `gem ragot`
 
 ## Use
@@ -20,7 +16,7 @@ With bundler, add it to your `Gemfile`: `gem ragot`
 
 ```ruby
 require 'ragot'
-Ragot.about String, :upcase        # only to show it's easy, not to tell you it's a good idea...
+Ragot.about String, :upcase           # only to show it's easy, not to tell you it's a good idea...
 "example".upcase
 # puts `upcase` called, with params : []. Got 'EXAMPLE' as result, at 2016-09-25 20:47:14 +0200 .0821934
 => "EXAMPLE"
@@ -31,9 +27,6 @@ already defined.
 
 Targeted methods don't even need to be defined. If not already, they'll be
 hooked when added to the targeted class or module.
-
-Hooks can be piled up on methods and will be executed in the order they were
-declared.
 
 #### Options
 
@@ -139,16 +132,16 @@ end
 
 * callbacks
 
-All the occuurrences when you need to do something that is not the job per se of
-your application, and you don't want to your class declaration to be clumbered
-by bits you consider heterogeneous.
+Any occurrence when you need to do something that is not the job per se of your
+application. You then don't want to your class declaration to be clumbered by
+bits you consider extraneous.
 
 It can be logging, stats, external API push, ...
 
 * debug
 
 Also, when you don't understand the behaviour of a library, or experience a
-crash, you can get help from `Ragot` to take a closer look without ripping it
+crash. You can get help from `Ragot` to take a closer look without ripping it
 open and garble its code with you traces.
 
 ```ruby
