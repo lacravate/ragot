@@ -72,10 +72,6 @@ module Ragot
     private
 
     FAILSAFE = { 'demo' => true, 'production' => true }
-    MESSAGE = {
-      before: "Entered %s, with params '%s',%s at %s .%s",
-      after: "`%s` called, with params : '%s'. Got '%s' as result, at %s .%s"
-    }
 
     def self.exec_hook(ragotee, failsafe, code, *result_and_params)
       ragotee.instance_exec *result_and_params, &code
@@ -104,7 +100,20 @@ module Ragot
         i[:after].each { |exe| Declaration.exec_hook self, *exe, r, *_ }
         r
       }
+    end
 
+    MESSAGE = { before: "Entered %s, with params %s,%s at %s .%s",
+      after: "`%s` called, with params : %s. Got '%s' as result, at %s .%s"
+    }
+
+    DEFAULT_HOOK = ->(hook, meth, result, *_) {
+      def ragot_talk(*_); puts *_; end unless respond_to? :ragot_talk, true
+      time = [Time.now].tap { |t| t << t.first.to_f.to_s.split('.').last }
+      ragot_talk MESSAGE[hook] % [meth, _.to_s, result, *time]
+    }
+
+    def default_hook(meth, hook)
+      ->(*_) { instance_exec hook, meth, _.shift, *_, &DEFAULT_HOOK }
     end
 
   end
