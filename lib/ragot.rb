@@ -95,9 +95,10 @@ module Ragot
     def redefine(klass, meth, i)
       klass.send :alias_method, "__ragot_inception_#{meth}", meth
       klass.send :define_method, meth, ->(*_, &b) {
-        self.class == klass && (i[:stamp] + i[:before]).each { |exe| Declaration.exec_hook self, *exe, *_ }
+        own = self.class == klass || singleton_class == klass
+        own && (i[:stamp] + i[:before]).each { |exe| Declaration.exec_hook self, *exe, *_ }
         r = send "__ragot_inception_#{meth}", *_, &b
-        self.class == klass && i[:after].each { |exe| Declaration.exec_hook self, *exe, r, *_ }
+        own && i[:after].each { |exe| Declaration.exec_hook self, *exe, r, *_ }
         r
       }
     end

@@ -134,15 +134,22 @@ end
 describe RagotString do
   describe 'about' do
     let(:string) { described_class.new 'plop' }
+    let(:string_clone) { RagotClone.new 'plop' }
 
     describe 'to_sym' do
       before {
         string.to_sym
+        string_clone.to_sym
       }
 
       it "should have logged the call to to_sym method" do
         expect(string.log).to eq [ ["`to_sym` called, with params : []. Got 'plop' as result, at #{string.log.first.first.scan(/at (.+)$/).first.first}"] ]
       end
+
+      it "should have logged nothing as ragot are not inherited" do
+        expect(string_clone.log).to be_nil
+      end
+
     end
 
     describe 'to_s' do
