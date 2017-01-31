@@ -82,23 +82,25 @@ module Ragot
     def __incept_ragot(meth, blk, options)
       o = { hook: :after, failsafe: FAILSAFE[Ragot.env], env: Ragot.env }.merge(options)
       k = o[:class] ? @klass.singleton_class : @klass
-      @i[k][meth] ||= { before: [], after: [], stamp: [] }
+      f = (fp = o[:filter_params]) && o[:filter_params].is_a?(Proc) && o[:filter_params]
+      i ||= @i[k][meth] ||= { before: [], after: [], filter: nil }
 
       return unless Array(o[:env]).map(&:to_s).include? Ragot.env
       return unless (k.instance_methods + k.private_instance_methods).include? meth.to_sym
 
-      @i[k][meth][ :stamp ] << [ o[:failsafe], default_hook(meth, :before) ] if o[:stamp]
-      @i[k][meth][o[:hook]] << [ o[:failsafe], blk || default_hook(meth,  o[:hook]) ]
-      @i[k][meth][:alias] ||= redefine k, meth, @i[k][meth]
+      i[:alias] ||= redefine k, meth, @i[k][meth], self.class
+      i[:filter] = [ o[:failsafe], f || default_hook(i[:alias], nil, FILTER_HOOK) ] if fp
+      i[:before].unshift [ o[:failsafe], default_hook(meth, :before) ] if o[:stamp]
+      i[o[:hook]] << [ o[:failsafe], blk || default_hook(meth,  o[:hook]) ]
     end
 
     def redefine(klass, meth, i)
       klass.send :alias_method, "__ragot_inception_#{meth}", meth
       klass.send :define_method, meth, ->(*_, &b) {
-        own = self.class == klass || singleton_class == klass
-        own && (i[:stamp] + i[:before]).each { |exe| Declaration.exec_hook self, *exe, *_ }
-        r = send "__ragot_inception_#{meth}", *_, &b
-        own && i[:after].each { |exe| Declaration.exec_hook self, *exe, r, *_ }
+        own =  i[:inherit] || self.class == klass || singleton_class == klass
+        own && (i[:before]).each { |exe| d.exec_hook self, *exe, *_ }
+        r = send i[:alias], *(i[:filter] && own ? d.exec_hook(self, *i[:filter], *_) : _), &b
+        own && i[:after].each { |exe| d.exec_hook self, *exe, r, *_ }
         r
       }
     end
@@ -113,8 +115,10 @@ module Ragot
       ragot_talk MESSAGE[hook] % [meth, _.to_s, result, *time]
     }
 
-    def default_hook(meth, hook)
-      ->(*_) { instance_exec hook, meth, _.shift, *_, &DEFAULT_HOOK }
+    FILTER_HOOK = ->(h, meth, *_) { _.shift method(meth).parameters.size }
+
+    def default_hook(meth, hook, exe=DEFAULT_HOOK)
+      ->(*_) { instance_exec hook, meth, _.shift, *_, &exe }
     end
 
   end
