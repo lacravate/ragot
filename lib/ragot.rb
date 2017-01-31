@@ -94,8 +94,8 @@ module Ragot
       i[o[:hook]] << [ o[:failsafe], blk || default_hook(meth,  o[:hook]) ]
     end
 
-    def redefine(klass, meth, i)
-      klass.send :alias_method, "__ragot_inception_#{meth}", meth
+    def redefine(klass, meth, i, d)
+      klass.send :alias_method, orig = "__ragot_inception_#{meth}", meth
       klass.send :define_method, meth, ->(*_, &b) {
         own =  i[:inherit] || self.class == klass || singleton_class == klass
         own && (i[:before]).each { |exe| d.exec_hook self, *exe, *_ }
@@ -103,6 +103,7 @@ module Ragot
         own && i[:after].each { |exe| d.exec_hook self, *exe, r, *_ }
         r
       }
+      orig
     end
 
     MESSAGE = { before: "Entered %s, with params %s,%s at %s .%s",
