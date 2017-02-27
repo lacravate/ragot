@@ -83,7 +83,7 @@ module Ragot
       o = { hook: :after, failsafe: FAILSAFE[Ragot.env], env: Ragot.env }.merge(options)
       k = o[:class] ? @klass.singleton_class : @klass
       f = (fp = o[:filter_params]) && o[:filter_params].is_a?(Proc) && o[:filter_params]
-      i ||= @i[k][meth] ||= { before: [], after: [], filter: nil }
+      i ||= @i[k][meth] ||= { before: [], after: [], filter: nil, inherit: o[:inherit] }
 
       return unless Array(o[:env]).map(&:to_s).include? Ragot.env
       return unless (k.instance_methods + k.private_instance_methods).include? meth.to_sym
