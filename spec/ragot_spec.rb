@@ -40,6 +40,17 @@ class RagotClone < RagotString
     'plop'
   end
 
+  def plip
+    'plup'
+  end
+
+  def rconc(*items)
+    items.inject('') do |s, i|
+      s << '_' unless s.empty?
+      s << i
+    end
+  end
+
 end
 
 class Stash
@@ -70,6 +81,14 @@ end
 
 Ragot.about RagotClone, :plap do |result|
   ragot_talk "'#{result}' is so fun to get, i cant't help calling `plap` again and again!"
+end
+
+Ragot.about RagotClone, :plip, filter_params: true do |result, *params|
+  ragot_talk "'#{result}' but #{params} params were passed along too"
+end
+
+Ragot.about(RagotClone, :rconc, filter_params: Proc.new { |*p| p[0..1] }) do |result, *params|
+  ragot_talk "'#{result}' was coined but #{params} params were passed in the first place"
 end
 
 Ragot.about RagotStringClass, :name, class: true
@@ -125,6 +144,34 @@ describe RagotClone do
           ["Entered plap, with params [], at #{string.log.first.first.scan(/at (.+)$/).first.first}"],
           ["`plap` called, with params : []. Got 'plop' as result, at #{string.log[1].first.scan(/at (.+)$/).first.first}"],
           ["'plop' is so fun to get, i cant't help calling `plap` again and again!"]
+        ]
+      end
+    end
+  end
+
+  describe 'filter_params' do
+    let(:string) { described_class.new 'plop' }
+
+    context "default filter" do
+      before {
+        string.plip true, this: 'param', and: "that one"
+      }
+
+      it "should have cleared all the params to comply with initial method prototype" do
+        expect(string.log).to eq [
+          ["'plup' but [true, {:this=>\"param\", :and=>\"that one\"}] params were passed along too"]
+        ]
+      end
+    end
+
+    context "custom filter" do
+      before {
+        string.rconc 'concat', "this", 'but', 'not', 'that'
+      }
+
+      it "should have cleared a custom set of params" do
+        expect(string.log).to eq [
+          ["'concat_this' was coined but [\"concat\", \"this\", \"but\", \"not\", \"that\"] params were passed in the first place"]
         ]
       end
     end
